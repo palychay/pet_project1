@@ -36,5 +36,4 @@ def add_request_data(ip_address: str, prompt: str, response: str) -> None:
         new_session.add(new_request)
         new_session.commit() 
 
-
-          
+   
