@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from gemini_client import get_answer_from_gemini
+from ai_client import get_answer_from_gemini
 from contextlib import asynccontextmanager
 
 from db import Base, engine, get_user_requests, add_request_data
@@ -40,7 +40,7 @@ def send_prompt(request: Request, prompt: str = Body(embed=True),):
 
 app.add_middleware(
      CORSMiddleware,
-     allow_origins=["http://localhost:5500"],
+     allow_origins=["http://localhost:5500", "http://127.0.0.1:8000"],
      allow_credentials=True,
      allow_methods=["*"],
      allow_headers=["*"],
