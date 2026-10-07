@@ -233,12 +233,6 @@
       transform: translateY(0);
     }
 
-    .btn-primary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none !important;
-    }
-
     .btn-ghost {
       background: rgba(255, 255, 255, 0.06);
       color: var(--text);
@@ -255,8 +249,6 @@
       line-height: 1.6;
       color: var(--text);
       position: relative;
-      white-space: pre-wrap;
-      word-wrap: break-word;
     }
 
     .answer.loading::after {
@@ -269,7 +261,6 @@
       color: var(--muted);
       letter-spacing: 0.02em;
       animation: shimmer 1.3s linear infinite;
-      background-size: 200% 100%;
     }
 
     @keyframes shimmer {
@@ -305,11 +296,6 @@
       border-radius: 14px;
       padding: 12px 14px;
       background: rgba(255, 255, 255, 0.03);
-      transition: border-color 0.2s ease;
-    }
-
-    .card:hover {
-      border-color: rgba(47, 224, 162, 0.3);
     }
 
     .card .label {
@@ -318,15 +304,11 @@
       letter-spacing: 0.06em;
       color: var(--muted);
       margin-bottom: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
 
     .card .prompt {
       color: var(--text);
-      margin: 0 0 8px;
-      font-weight: 500;
+      margin: 0 0 6px;
     }
 
     .card .response {
@@ -334,8 +316,6 @@
       margin: 0;
       font-size: 14px;
       line-height: 1.5;
-      white-space: pre-wrap;
-      word-wrap: break-word;
     }
 
     .empty {
@@ -358,19 +338,8 @@
       font-size: 12px;
     }
 
-    .badge.error {
-      background: rgba(255, 86, 86, 0.12);
-      color: #ffa6a6;
-      border-color: rgba(255, 86, 86, 0.3);
-    }
-
     .muted {
       color: var(--muted);
-    }
-
-    .time {
-      font-size: 10px;
-      opacity: 0.7;
     }
 
     @media (max-width: 960px) {
@@ -405,7 +374,7 @@
       <div class="status">
         <div class="chip">API: <strong>http://localhost:8000</strong></div>
         <div class="chip">Frontend: <strong>http://localhost:5500</strong></div>
-        <div class="badge" id="connBadge"><span class="status-dot"></span><span>Проверка подключения...</span></div>
+        <div class="badge" id="connBadge"><span class="status-dot"></span><span>Статус API</span></div>
         <button class="btn-ghost" id="pingBtn">Проверить</button>
       </div>
     </header>
@@ -413,7 +382,7 @@
     <div class="grid">
       <section class="panel">
         <h2>Задайте вопрос</h2>
-        <p class="subtext">Отправьте промт в API, ответ сразу появится ниже. Ctrl/⌘ + Enter тоже работает.</p>
+        <p class="subtext">Отправьте промпт в API, ответ сразу появится ниже. Ctrl/⌘ + Enter тоже работает.</p>
         <textarea id="promptInput"
           placeholder="Например: придумай стратегию запуска pet‑проекта с бюджетом 100$"></textarea>
         <div class="controls">
@@ -444,7 +413,6 @@
   </div>
 
   <script>
-    const API_BASE_URL = 'http://localhost:8000';
     const promptInput = document.getElementById('promptInput');
     const sendBtn = document.getElementById('sendBtn');
     const clearBtn = document.getElementById('clearBtn');
@@ -453,82 +421,45 @@
     const refreshBtn = document.getElementById('refreshBtn');
     const connBadge = document.getElementById('connBadge');
     const pingBtn = document.getElementById('pingBtn');
-
-    // Инициализация
-    let isConnected = false;
+    const API_URL = 'http://localhost:8000/requests';
 
     const setLoading = (isLoading) => {
       sendBtn.disabled = isLoading;
-      promptInput.disabled = isLoading;
+      sendBtn.style.opacity = isLoading ? 0.65 : 1;
       answerBox.classList.toggle('loading', isLoading);
-      if (isLoading) {
-        answerBox.textContent = '';
-      }
     };
 
     const updateStatus = (ok) => {
-      isConnected = ok;
       const dot = connBadge.querySelector('.status-dot');
-      const text = connBadge.querySelector('span:last-child');
-      
-      if (ok) {
-        connBadge.classList.remove('error');
-        connBadge.classList.add('badge');
-        dot.style.background = 'var(--accent)';
-        dot.style.boxShadow = '0 0 12px var(--glow)';
-        text.textContent = 'API доступен';
-        connBadge.style.borderColor = 'rgba(47, 224, 162, 0.4)';
-        connBadge.style.background = 'rgba(47, 224, 162, 0.12)';
-      } else {
-        connBadge.classList.remove('badge');
-        connBadge.classList.add('error');
-        dot.style.background = '#ff5656';
-        dot.style.boxShadow = '0 0 12px rgba(255, 86, 86, 0.4)';
-        text.textContent = 'API недоступен';
-        connBadge.style.borderColor = 'rgba(255, 86, 86, 0.3)';
-        connBadge.style.background = 'rgba(255, 86, 86, 0.12)';
-      }
-    };
-
-    const formatDate = (dateString) => {
-      if (!dateString) return '';
-      const date = new Date(dateString);
-      return date.toLocaleString('ru-RU', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      connBadge.style.borderColor = ok ? 'rgba(47, 224, 162, 0.4)' : 'rgba(255, 86, 86, 0.4)';
+      connBadge.style.background = ok ? 'rgba(47, 224, 162, 0.12)' : 'rgba(255, 86, 86, 0.10)';
+      connBadge.querySelector('span:last-child').textContent = ok ? 'API доступен' : 'API недоступен';
+      dot.style.background = ok ? 'var(--accent)' : '#ff5656';
+      dot.style.boxShadow = ok ? '0 0 12px var(--glow)' : '0 0 12px rgba(255,86,86,0.4)';
+      connBadge.dataset.ok = ok ? '1' : '0';
     };
 
     const renderHistory = (items) => {
       historyEl.innerHTML = '';
-      
       if (!items || !items.length) {
         historyEl.innerHTML = '<div class="empty">История пуста. Отправьте первый запрос.</div>';
         return;
       }
-      
-      // Показываем последние 10 записей
-      items.slice().reverse().slice(0, 10).forEach((item) => {
+      items.slice().reverse().forEach(({ prompt, response, id }) => {
         const card = document.createElement('div');
         card.className = 'card';
 
         const label = document.createElement('div');
         label.className = 'label';
-        label.innerHTML = `
-          <span>Запрос #${item.id || '—'}</span>
-          <span class="time">${formatDate(item.created_at)}</span>
-        `;
+        label.textContent = `#${id ?? '—'}`;
 
         const promptEl = document.createElement('p');
         promptEl.className = 'prompt';
-        promptEl.textContent = item.promt || 'Без текста';
+        promptEl.textContent = prompt;
 
         const responseEl = document.createElement('p');
         responseEl.className = 'response';
-        responseEl.textContent = item.response || 'Нет ответа';
+        responseEl.textContent = response;
 
         card.appendChild(label);
         card.appendChild(promptEl);
@@ -539,135 +470,56 @@
 
     const fetchHistory = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/requests`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error('History failed');
+        const data = await res.json();
         renderHistory(data);
         updateStatus(true);
-        return data;
-      } catch (error) {
-        console.error('Ошибка загрузки истории:', error);
+      } catch (e) {
+        console.error(e);
         renderHistory([]);
         updateStatus(false);
-        return null;
       }
     };
 
     const sendPrompt = async () => {
-      const promt = promptInput.value.trim();
-      if (!promt) {
-        answerBox.textContent = 'Введите текст запроса!';
-        return;
-      }
-
+      const prompt = promptInput.value.trim();
+      if (!prompt) return;
       setLoading(true);
-
       try {
-        const response = await fetch(`${API_BASE_URL}/api/requests`, {
+        const res = await fetch(API_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ promt }), // Обратите внимание: promt (с одной 'm') как в вашем API
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt })
         });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        answerBox.textContent = data.answer || 'Пустой ответ от сервера';
-        
-        // Обновляем историю после успешного запроса
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+        answerBox.textContent = data.answer || 'Пустой ответ';
         await fetchHistory();
-        
-      } catch (error) {
-        console.error('Ошибка отправки запроса:', error);
-        answerBox.textContent = 'Ошибка подключения к API. Убедитесь, что сервер запущен на localhost:8000';
+      } catch (e) {
+        console.error(e);
+        answerBox.textContent = 'Не удалось получить ответ. Проверьте, что backend запущен и разрешён CORS.';
         updateStatus(false);
       } finally {
         setLoading(false);
       }
     };
 
-    const checkConnection = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/requests`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          updateStatus(true);
-          return true;
-        } else {
-          updateStatus(false);
-          return false;
-        }
-      } catch (error) {
-        console.error('Ошибка проверки подключения:', error);
-        updateStatus(false);
-        return false;
-      }
-    };
+    // Initial load
+    fetchHistory();
 
-    const clearInput = () => {
+    sendBtn.addEventListener('click', sendPrompt);
+    clearBtn.addEventListener('click', () => {
       promptInput.value = '';
       promptInput.focus();
-    };
-
-    // Инициализация при загрузке
-    document.addEventListener('DOMContentLoaded', async () => {
-      // Проверяем подключение
-      await checkConnection();
-      
-      // Загружаем историю
-      await fetchHistory();
-      
-      // Фокус на поле ввода
-      promptInput.focus();
     });
-
-    // Обработчики событий
-    sendBtn.addEventListener('click', sendPrompt);
-    
-    clearBtn.addEventListener('click', clearInput);
-    
     refreshBtn.addEventListener('click', fetchHistory);
-    
-    pingBtn.addEventListener('click', checkConnection);
-    
+    pingBtn.addEventListener('click', fetchHistory);
     promptInput.addEventListener('keydown', (e) => {
-      // Ctrl+Enter или Cmd+Enter для отправки
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        if (!sendBtn.disabled) {
-          sendPrompt();
-        }
-      }
-      
-      // Отключение отправки по Enter (только Shift+Enter для новой строки)
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        if (!sendBtn.disabled) {
-          sendPrompt();
-        }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        sendPrompt();
       }
     });
-
-    // Автоматическая проверка подключения каждые 30 секунд
-    setInterval(checkConnection, 30000);
   </script>
 </body>
 
